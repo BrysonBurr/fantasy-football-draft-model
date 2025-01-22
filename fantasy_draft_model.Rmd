@@ -37,7 +37,7 @@ all_season_stats <- list()
 
 for(year in start_year:end_year) {
   cat("Loading data for season:", year, "\n")  # Print progress
-  season_stats <- load_player_stats(year)
+  season_stats <- nflfastR::load_player_stats(year)
   
   all_season_stats[[as.character(year)]] <- season_stats
 }
@@ -75,13 +75,24 @@ clean_stats <- function(df) {
 
 processed_list <- map(all_season_stats, clean_stats)
 
-unique(testing$position_group)
 
-testing <- processed_list$`2010`
+# keep only current players for seasons
+#using nflreadr to get current rosters
+current_players <- nflreadr::load_rosters(2024) |>
+  filter(position %in% c("QB", "RB", "TE", "WR"))
+colnames(current_players)
+
+# function to filter for current players
+filter_current_players <- function(df, roster_ids) {
+  df |>
+    inner_join(roster_ids, by = c("player_id" = "gsis_id"))
+}
+# apply function to list to filter for current players
+filtered_seasons <- lapply(processed_list, filter_current_players, roster_ids = current_players)
+
 ```
 
 
-### TO DO: GET CURRENT ROSTERS, IF PLAYER IN DF IS NOT IN CURRENT ROSTER GET RID OF HIM
 
 
 ```{r future df}
